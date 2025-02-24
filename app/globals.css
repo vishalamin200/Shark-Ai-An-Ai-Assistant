@@ -5,17 +5,44 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --color-primary: #212121;
+  --color-chat: #303030;
+  --color-secondary:#171717;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --color-primary: #181818;
+    --color-chat: #303030;
+    --color-secondary: #050505;
+    --less-white:#d3d3d3;
   }
 }
 
+
+.animate-shimmer {
+  background-size: 200% auto;
+  animation: shimmer 2s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200%;
+  }
+
+  100% {
+    background-position: -200%;
+  }
+}
+
+.language-btn{
+  @apply rounded-lg hover:bg-[#565656] w-full flex items-center justify-center h-8 cursor-pointer;
+}
+
 body {
-  color: var(--foreground);
+  color: var(--less-white);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
