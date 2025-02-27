@@ -1,14 +1,22 @@
+import axiosInstance from "@/utils/axiosInstance";
+import { generateId } from "@/utils/generateId";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import axios from "axios";
 
 interface Message {
-    id: string,
+    _id?: string,
     text: string | null,
     sender: string
 }
 
+
+
+export interface currentChatProps{
+    _id?:string,
+    title:string,
+    messages?: Message[] | null
+}
+
 interface initialStateProps {
-    messages: Message[],
     hoveredMessage: string | null,
     copied: string | null,
     isEditing: { id: string | null, text: string | null },
@@ -19,13 +27,15 @@ interface initialStateProps {
     serverMessage: string | null
     loading: boolean
 
-    scrollup:boolean,
-    languageBar:boolean,
-    profile:boolean,
+    scrollup: boolean,
+    languageBar: boolean,
+    profile: boolean,
+
+    currentChat: currentChatProps | null
+    userId: string | null,
 }
 
 const initialState: initialStateProps = {
-    messages: [],
     hoveredMessage: null,
     copied: null,
     isEditing: { id: null, text: null },
@@ -36,10 +46,17 @@ const initialState: initialStateProps = {
     serverMessage: null,
     loading: false,
 
-    scrollup:false,
+    scrollup: false,
 
     languageBar: false,
-    profile:false,
+    profile: false,
+
+    currentChat:{
+        _id:generateId(),
+        title:"New Chat",
+        messages:[],
+    },
+    userId:null
 }
 
 export const copyMessage = createAsyncThunk("chat/copyMessage/", async ({ id, text }: { id: string, text: string }) => {
@@ -51,14 +68,45 @@ export const copyMessage = createAsyncThunk("chat/copyMessage/", async ({ id, te
     }
 })
 
-export const sendMessage = createAsyncThunk('sendMessage', async (data) => {
+export const sendMessage = createAsyncThunk('sendMessage', async (data:{prompt:string, language:string}) => {
     try {
-        const axiosPromise = await axios.post(`http://localhost:3000//api/prompt/`, data)
+        const axiosPromise = await axiosInstance.post(`/prompt`, data)
         return axiosPromise?.data
     } catch (error) {
         console.log("Error in sending message", (error as Error).message)
     }
 })
+
+export const createNewChat = createAsyncThunk('creatNewChat', async (data:{userId:string}, thunkApi) => {
+    try {
+        const axiosPromise = await axiosInstance.post(`/chat`, data)
+        return axiosPromise?.data
+    } catch (error) {
+        console.log("Error in sending message", (error as Error).message)
+        return thunkApi.rejectWithValue((error as Error).message)
+    }
+})
+
+export const add_new_message = createAsyncThunk('add_new_message', async (data:{userId:string, chatId:string, sender:string, text:string}, thunkApi) => {
+    try {
+        const axiosPromise = await axiosInstance.post(`/message/add`, data)
+        return axiosPromise?.data
+    } catch (error) {
+        console.log("Error in adding new message", (error as Error).message)
+        return thunkApi.rejectWithValue((error as Error).message)
+    }
+})
+
+export const set_title = createAsyncThunk('set_title', async (data:{chatId:string, text:string, }, thunkApi) => {
+    try {
+        const axiosPromise = await axiosInstance.post(`/prompt/get_title/`, data)
+        return axiosPromise?.data
+    } catch (error) {
+        console.log("Error in generating title", (error as Error).message)
+        return thunkApi.rejectWithValue((error as Error).message)
+    }
+})
+
 
 const chatSlice = createSlice({
     name: "chat",
@@ -90,26 +138,33 @@ const chatSlice = createSlice({
         },
 
         addMessage: (state, action: PayloadAction<Message>) => {
-            const { id, text, sender } = action.payload
-            if (!id || !text || (sender !== 'user' && sender !== 'server')) {
+            const { _id, text, sender } = action.payload
+            if (!_id || !text || (sender !== 'user' && sender !== 'server')) {
 
             } else {
-                state.messages.push({ id, text, sender })
+                if(state.currentChat && state.currentChat.messages){
+                    state.currentChat.messages.push({ _id, text, sender })
+                }   
             }
         },
 
-        toggleScrollUp: (state)=>{
+        toggleScrollUp: (state) => {
             state.scrollup = !state.scrollup
         },
-        toggleProfile: (state)=>{
+        toggleProfile: (state) => {
             state.profile = !state.profile
         },
-    
-        toggleLanguageBar: (state)=>{
+
+        toggleLanguageBar: (state) => {
             state.languageBar = !state.languageBar
         },
-    
 
+        setCurrentChat: (state,action)=>{
+            state.currentChat = action.payload
+        },
+        setUserId: (state,action)=>{
+            state.userId = action.payload
+        }
     },
     extraReducers: (builder) => {
         builder
@@ -118,9 +173,9 @@ const chatSlice = createSlice({
                 state.copied = id as string
             })
 
-            .addCase(sendMessage.pending, (state)=>{
+            .addCase(sendMessage.pending, (state) => {
                 state.prompt = ""
-                state.loading=true
+                state.loading = true
             })
 
             .addCase(sendMessage.fulfilled, (state, action) => {
@@ -130,12 +185,30 @@ const chatSlice = createSlice({
                 state.serverMessage = response
             })
 
-            .addCase(sendMessage.rejected, (state,action)=>{
+            .addCase(sendMessage.rejected, (state) => {
                 state.loading = false
+            })
+
+            .addCase(createNewChat.fulfilled, (state, action) => {
+                const newchat = action?.payload?.data
+                state.currentChat = newchat
+            })
+
+            .addCase(add_new_message.fulfilled, (state, action) => {
+                if(action.payload.success){
+                    console.log("new message added succesfully",action.payload.data)
+                }
+            })
+
+            .addCase(set_title.fulfilled, (state, action) => {
+                if(action.payload.success && state.currentChat){
+                    state.currentChat.title = action?.payload?.title
+                    console.log('current chat title is ', action?.payload?.title)
+                }
             })
     }
 
 })
 
-export const { setPrompt, addMessage, setServerMessage, setIsEditing, setLanguage, setHoveredMessage, setLoading, toggleScrollUp, toggleLanguageBar, toggleProfile } = chatSlice.actions
+export const { setPrompt, addMessage, setServerMessage, setIsEditing, setLanguage, setHoveredMessage, setLoading, toggleScrollUp, toggleLanguageBar, toggleProfile,setCurrentChat,setUserId } = chatSlice.actions
 export default chatSlice.reducer

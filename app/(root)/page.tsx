@@ -8,18 +8,19 @@ import SimulatedStreaming from '@/components/SimulatedStreaming'
 import sentMsgImage from '@/public/icons/arrow-up-solid.svg'
 import attachmentIcon from '@/public/icons/attach-icon-white.png'
 import deepseekLogo from '@/public/icons/shark_without_bg.webp'
-import { addMessage, copyMessage, sendMessage, setHoveredMessage, setIsEditing, setLanguage, setPrompt, toggleScrollUp } from '@/redux/slices/chat.slice'
+import { add_new_message, addMessage, copyMessage, sendMessage, set_title, setHoveredMessage, setIsEditing, setLanguage, setPrompt, toggleScrollUp } from '@/redux/slices/chat.slice'
 import { AppDispatch, RootState } from '@/redux/store'
 import { Check, Copy, PenLine } from 'lucide-react'
 import Image from "next/image"
 import { FormEvent, useEffect, useRef } from 'react'
 import Markdown from 'react-markdown'
 import { useDispatch, useSelector } from 'react-redux'
+import Sidebar from '@/components/Sidebar'
 
 
 const Home = () => {
 
-  const { prompt, language, messages, hoveredMessage, isEditing, copied, loading, serverMessage, scrollup } = useSelector((state: RootState) => state.chat)
+  const { prompt, language,  hoveredMessage, isEditing, copied, loading, serverMessage, scrollup, currentChat, userId } = useSelector((state: RootState) => state.chat)
 
   const dispatch = useDispatch<AppDispatch>()
 
@@ -40,7 +41,6 @@ const Home = () => {
       }
     }
   }
-
   useEffect(() => {
     const textarea = textareaRef.current
 
@@ -71,9 +71,7 @@ const Home = () => {
       return
     }
   }, [scrollup])
-
-
-
+  { console.log("userId =", userId) }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -82,23 +80,36 @@ const Home = () => {
     }
 
     const userMessage = {
-      'id': generateId(),
+      '_id': generateId(),
       'text': prompt?.trim(),
       "sender": 'user'
     }
 
-
     dispatch(toggleScrollUp())
     dispatch(addMessage(userMessage))
 
+    if ((!currentChat?.messages || currentChat.messages?.length == 0) && currentChat?._id){
+        dispatch(set_title({chatId:currentChat._id.toString(),text:prompt}))
+    }
+
+    const user_new_msg = {
+      userId: userId as string,
+      chatId: currentChat?._id as string,
+      'text': prompt?.trim(),
+      "sender": 'user'
+    }
+
     try {
       const promptData = {
-        prompt,
-        language
+        prompt: prompt as string,
+        language: language as string
       }
 
       await dispatch(sendMessage(promptData))
-
+      if(userId){
+        await dispatch(add_new_message(user_new_msg))
+      }
+      
 
     } catch (error) {
       console.log("Error in generating Response", (error as Error).message)
@@ -107,8 +118,8 @@ const Home = () => {
   return (
     <div className='flex  w-screen h-screen overflow-hidden'>
 
-      <div className="sidebar h-full  w-[5%]  flex-col items-center bg-secondary">
-
+      <div className="sidebar h-full   z-50 bg-white">
+          <Sidebar/>
       </div>
 
       <div className={`h-full relative right-side w-full flex flex-col  items-center justify-center bg-primary `}>
@@ -119,40 +130,42 @@ const Home = () => {
           <LanguageBar />
 
 
-          {messages?.length > 0 &&
+          {(currentChat?.messages && currentChat?.messages?.length > 0) &&
             <input
+              readOnly
               type="text"
-              name="topic"
-              defaultValue={'New Chat'}
-              id="topic"
-              className="chat-topic-input outline-none w-1/4 h-8 rounded-3xl  text-lg text-lesswhite bg-transparent hover:border hover:border-white text-center"
+              name="title"
+              value={currentChat?.title}
+              id="title"
+              className="chat-title-input outline-none w-1/4 h-8 rounded-3xl  text-lg text-lesswhite bg-transparent hover:border hover:border-white text-center"
             />
           }
           <LoginButton />
         </div>
-
-        <div ref={chatRef} className={`w-full ${messages?.length > 0 ? 'h-full' : ""} overflow-y-scroll scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-400 overflow-x-hidden flex justify-center mt-[8vh]`}>
-          {messages?.length == 0 ? "" :
+    
+        <div ref={chatRef} className={`w-full ${(currentChat?.messages && currentChat?.messages?.length > 0) ? 'h-full' : ""} overflow-y-scroll scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-400 overflow-x-hidden flex justify-center mt-[8vh]`}>
+    
+          {(!currentChat?.messages || currentChat?.messages?.length === 0) ? "" :
             <div className='w-7/12  h-fit  pb-[15rem]'>
-
-              {messages?.map((msg) =>
-
-                <div key={msg?.id} className='w-full'>
+             
+              {currentChat?.messages?.map((msg) =>
+                 
+                <div key={msg?._id} className='w-full'>
                   {msg?.sender === 'user' ?
-
+                     
                     <div
                       className='w-full flex justify-end mr-5 '
-                      onMouseEnter={() => dispatch(setHoveredMessage(msg?.id))}
+                      onMouseEnter={() => dispatch(setHoveredMessage(msg?._id))}
                       onMouseLeave={() => dispatch(setHoveredMessage(null))}
                     >
-
-                      {isEditing?.id === msg?.id ?
+                     
+                      {isEditing?.id === msg?._id ?
                         <div className='w-[90%] my-2'>
                           <div className="message-box bg-[#4f4f4f] w-full h-fit  rounded-3xl py-4 px-4">
 
                             <textarea
                               ref={editTextRef}
-                              onChange={(e) => dispatch(setIsEditing({ id: msg?.id, text: e.target.value }))}
+                              onChange={(e) => dispatch(setIsEditing({ id: msg?._id, text: e.target.value }))}
                               value={isEditing?.text as string}
                               rows={2}
                               name="edit-text"
@@ -192,10 +205,10 @@ const Home = () => {
                         : <div className="py-3 px-4 my-2 h-fit max-w-[90%]  w-fit rounded-3xl bg-chat relative">
                           {msg?.text}
                           {
-                            hoveredMessage === msg?.id ?
+                            hoveredMessage === msg?._id ?
                               <div className="absolute -left-24 top-0 mt-2 flex gap-x-2 items-center ">
 
-                                {copied === msg?.id ?
+                                {copied === msg?._id ?
                                   <div className="h-9 w-9 rounded-xl justify-center items-center flex bg-[#5d5d77] bg-opacity-0 hover:bg-opacity-25 transition-opacity duration-500 ease-in-out">
                                     <Check
                                       size={20}
@@ -208,7 +221,7 @@ const Home = () => {
                                   :
                                   <div className="h-9 w-9 rounded-xl justify-center items-center flex bg-[#5d5d77] bg-opacity-0 hover:bg-opacity-25 transition-opacity duration-500 ease-in-out">
                                     <Copy
-                                      onClick={() => dispatch(copyMessage({ id: msg?.id, text: msg?.text as string }))}
+                                      onClick={() => dispatch(copyMessage({ id: msg?._id as string, text: msg?.text as string }))}
                                       size={20}
                                       color='#c4c7d1'
                                       className='cursor-pointer'
@@ -216,11 +229,10 @@ const Home = () => {
                                   </div>
 
                                 }
-
                                 {
 
-                                  isEditing.id !== msg?.id ? <div className="h-9 w-9 rounded-xl justify-center items-center flex bg-[#5d5d77] bg-opacity-0 hover:bg-opacity-25 transition-opacity duration-500 ease-in-out">
-                                    <PenLine onClick={() => dispatch(setIsEditing({ id: msg?.id, text: msg?.text }))} size={20} color='#c4c7d1' className='cursor-pointer font-bold' />
+                                  isEditing.id !== msg?._id ? <div className="h-9 w-9 rounded-xl justify-center items-center flex bg-[#5d5d77] bg-opacity-0 hover:bg-opacity-25 transition-opacity duration-500 ease-in-out">
+                                    <PenLine onClick={() => dispatch(setIsEditing({ id: msg?._id, text: msg?.text }))} size={20} color='#c4c7d1' className='cursor-pointer font-bold' />
                                   </div> : ""
                                 }
                               </div> : ""

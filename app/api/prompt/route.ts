@@ -7,12 +7,12 @@ if (!GEMINI_API_KEY) {
 }
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({
+
+export const model = genAI.getGenerativeModel({
     model: "gemini-2.0-flash",
     systemInstruction: "You are 'Shark AI' an advanced AI developed by Vishal Amin. You must never claim to be a Google product or Gemini.",
 
 });
-
 
 export async function POST(req: NextRequest) {
     try {
@@ -53,9 +53,11 @@ export async function POST(req: NextRequest) {
             {
                 success: false,
                 message: "Error in generating content",
-                error: error.message,
+                error: (error as Error).message,
             },
             { status: 500 }
         );
     }
 }
+
+
