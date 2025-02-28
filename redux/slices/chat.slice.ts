@@ -1,6 +1,7 @@
 import axiosInstance from "@/utils/axiosInstance";
 import { generateId } from "@/utils/generateId";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import mongoose from "mongoose";
 
 interface Message {
     _id?: string,
@@ -9,11 +10,16 @@ interface Message {
 }
 
 
-
 export interface currentChatProps{
     _id?:string,
     title:string,
     messages?: Message[] | null
+}
+
+export interface SidebarChatProp{
+    _id:string,
+    title:string,
+    createdAt:Date,
 }
 
 interface initialStateProps {
@@ -33,6 +39,11 @@ interface initialStateProps {
 
     currentChat: currentChatProps | null
     userId: string | null,
+    editingChatTitle:boolean,
+
+    hoveredSidebarChat: string | null | mongoose.Types.ObjectId
+
+    options:boolean,
 }
 
 const initialState: initialStateProps = {
@@ -56,7 +67,12 @@ const initialState: initialStateProps = {
         title:"New Chat",
         messages:[],
     },
-    userId:null
+    userId:null,
+
+    editingChatTitle:false,
+    hoveredSidebarChat: null,
+
+    options:false
 }
 
 export const copyMessage = createAsyncThunk("chat/copyMessage/", async ({ id, text }: { id: string, text: string }) => {
@@ -97,6 +113,7 @@ export const add_new_message = createAsyncThunk('add_new_message', async (data:{
     }
 })
 
+
 export const set_title = createAsyncThunk('set_title', async (data:{chatId:string, text:string, }, thunkApi) => {
     try {
         const axiosPromise = await axiosInstance.post(`/prompt/get_title/`, data)
@@ -106,6 +123,8 @@ export const set_title = createAsyncThunk('set_title', async (data:{chatId:strin
         return thunkApi.rejectWithValue((error as Error).message)
     }
 })
+
+
 
 
 const chatSlice = createSlice({
@@ -159,11 +178,19 @@ const chatSlice = createSlice({
             state.languageBar = !state.languageBar
         },
 
+        toggleOptions: (state) => {
+            state.options = !state.options
+        },
+
         setCurrentChat: (state,action)=>{
             state.currentChat = action.payload
         },
         setUserId: (state,action)=>{
             state.userId = action.payload
+        },
+
+        setHoveredSidebarChat: (state,action)=>{
+            state.hoveredSidebarChat = action.payload
         }
     },
     extraReducers: (builder) => {
@@ -210,5 +237,5 @@ const chatSlice = createSlice({
 
 })
 
-export const { setPrompt, addMessage, setServerMessage, setIsEditing, setLanguage, setHoveredMessage, setLoading, toggleScrollUp, toggleLanguageBar, toggleProfile,setCurrentChat,setUserId } = chatSlice.actions
+export const { setPrompt, addMessage, setServerMessage, setIsEditing, setLanguage, setHoveredMessage, setLoading, toggleScrollUp, toggleLanguageBar, toggleProfile,setCurrentChat,setUserId, setHoveredSidebarChat, toggleOptions} = chatSlice.actions
 export default chatSlice.reducer

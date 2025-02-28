@@ -1,9 +1,9 @@
 'use client';
 
-import { createNewChat } from '@/redux/slices/chat.slice';
+import { createNewChat, setCurrentChat, setHoveredSidebarChat } from '@/redux/slices/chat.slice';
 import { AppDispatch, RootState } from '@/redux/store';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { SidebarClose, SidebarOpen, SquarePen } from 'lucide-react';
+import {  Ellipsis, SidebarClose, SidebarOpen, SquarePen } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { useDispatch, useSelector } from 'react-redux';
@@ -15,16 +15,23 @@ const fetchChats = async ({ pageParam = 1, userId, limit }: { pageParam: number,
 
     if (response.ok) {
         const data = await response.json();
-  
+
         return data;
     } else {
         throw new Error('Error in Fetching chats');
     }
 };
 
+const fetchChat = async (chatId: string) => {
+    const response = await fetch(`http://localhost:3000/api/chat/fetch_chat?chatId=${chatId}`)
+    const data = await response.json()
+    return data
+}
+
 function Sidebar() {
     const [isSidebarOpen, setSidebarOpen] = useState(true);
-    const { currentChat, userId } = useSelector((state: RootState) => state.chat);
+
+    const { currentChat, userId, editingChatTitle, hoveredSidebarChat } = useSelector((state: RootState) => state.chat);
 
     const dispatch: AppDispatch = useDispatch();
 
@@ -33,6 +40,19 @@ function Sidebar() {
             dispatch(createNewChat({ userId }));
         }
     };
+
+    const handleChatFetch = async (chatId: string) => {
+        if (chatId) {
+            const data = await fetchChat(chatId)
+            if (data.error) {
+                return
+            }
+            const { chat } = data
+            if (chat) {
+                dispatch(setCurrentChat(chat))
+            }
+        }
+    }
 
     const { data, fetchNextPage, hasNextPage, isLoading } = useInfiniteQuery({
         queryKey: ['chats', userId],
@@ -43,13 +63,17 @@ function Sidebar() {
         initialPageParam: 1
     });
 
+
+    const chats = data?.pages.flatMap(page => page.chats) || [];
+
+
     useEffect(() => {
         if (currentChat?.title && userId) {
             queryClient.invalidateQueries({ queryKey: ['chats', userId] });
         }
     }, [currentChat?.title, userId]);
 
-    const chats = data?.pages.flatMap(page => page.chats) || [];
+
 
     return (
         <div className={`${isSidebarOpen ? 'w-[16rem]' : 'w-[5rem]'} h-full transition-all duration-500 ease-in-out bg-secondary`}>
@@ -67,18 +91,36 @@ function Sidebar() {
                     {isLoading ? (
                         <p>Loading chats...</p>
                     ) : (
-                            <div id="scrollableDiv" className="older-chats flex flex-col gap-y-20 items-center text-lesswhite overflow-y-scroll scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-600 h-[80vh] my-10 pb-10 w-full">
+                        <div id="scrollableDiv" className="older-chats flex flex-col gap-y-20 items-center text-lesswhite overflow-y-scroll overflow-x-hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-600 h-[80vh] my-10 pb-10 w-full ">
                             <InfiniteScroll
-                                dataLength={chats.length || 0}
+                                dataLength={chats?.length || 0}
                                 next={fetchNextPage}
                                 hasMore={!!hasNextPage}
                                 loader={<p>Loading more...</p>}
                                 scrollableTarget="scrollableDiv"
-                                className='flex flex-col gap-y-6'
+                                className='flex flex-col gap-y-2'
                             >
-                                {chats.map(chat => (
-                                    <div key={chat?._id} className="text-md">
-                                        <input type="text" defaultValue={chat?.title} className="outline-none border-none bg-secondary" />
+                                {chats?.map(chat => (
+                                    <div
+                                        
+                                        onMouseEnter={() => dispatch(setHoveredSidebarChat(chat._id))}
+                                        onMouseLeave={() =>dispatch(setHoveredSidebarChat(null))}
+                                        key={chat?._id}
+                                        className="text-md flex flex-nowrap justify-between items-center hover:bg-primary bg-secondary rounded-lg cursor-pointer px-2  mx-4 relative ">
+
+                                        <input
+                                            onClick={() => handleChatFetch(chat?._id)}
+                                            readOnly={!editingChatTitle}
+                                            type="text"
+                                            value={chat?.title}
+                                            className="outline-none  border-none bg-transparent  py-2  cursor-pointer mr-5 pl-2"
+                                        />
+                                        <div className="absolute right-5   w-5 h-4 bg-gradient-to-l from-secondary/15 via-secondary/70 to-transparent pointer-events-none"></div>
+                                        {hoveredSidebarChat == chat._id && (<div className='absolute right-2'>  
+                                            <Ellipsis size={18} className=' h-full' />
+
+                                        </div>)}
+
                                     </div>
                                 ))}
                             </InfiniteScroll>
