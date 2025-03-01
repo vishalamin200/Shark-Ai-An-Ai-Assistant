@@ -44,6 +44,7 @@ interface initialStateProps {
     hoveredSidebarChat: string | null | mongoose.Types.ObjectId
 
     options:boolean,
+    isSidebarOpen:boolean
 }
 
 const initialState: initialStateProps = {
@@ -72,7 +73,8 @@ const initialState: initialStateProps = {
     editingChatTitle:false,
     hoveredSidebarChat: null,
 
-    options:false
+    options:false,
+    isSidebarOpen:true,
 }
 
 export const copyMessage = createAsyncThunk("chat/copyMessage/", async ({ id, text }: { id: string, text: string }) => {
@@ -123,8 +125,6 @@ export const set_title = createAsyncThunk('set_title', async (data:{chatId:strin
         return thunkApi.rejectWithValue((error as Error).message)
     }
 })
-
-
 
 
 const chatSlice = createSlice({
@@ -182,6 +182,10 @@ const chatSlice = createSlice({
             state.options = !state.options
         },
 
+        toggleSidebar: (state) => {
+            state.isSidebarOpen= !state.isSidebarOpen
+        },
+
         setCurrentChat: (state,action)=>{
             state.currentChat = action.payload
         },
@@ -223,19 +227,17 @@ const chatSlice = createSlice({
 
             .addCase(add_new_message.fulfilled, (state, action) => {
                 if(action.payload.success){
-                    console.log("new message added succesfully",action.payload.data)
                 }
             })
 
             .addCase(set_title.fulfilled, (state, action) => {
                 if(action.payload.success && state.currentChat){
                     state.currentChat.title = action?.payload?.title
-                    console.log('current chat title is ', action?.payload?.title)
                 }
             })
     }
 
 })
 
-export const { setPrompt, addMessage, setServerMessage, setIsEditing, setLanguage, setHoveredMessage, setLoading, toggleScrollUp, toggleLanguageBar, toggleProfile,setCurrentChat,setUserId, setHoveredSidebarChat, toggleOptions} = chatSlice.actions
+export const { setPrompt, addMessage, setServerMessage, setIsEditing, setLanguage, setHoveredMessage, setLoading, toggleScrollUp, toggleLanguageBar, toggleProfile,setCurrentChat,setUserId, setHoveredSidebarChat, toggleOptions,toggleSidebar} = chatSlice.actions
 export default chatSlice.reducer

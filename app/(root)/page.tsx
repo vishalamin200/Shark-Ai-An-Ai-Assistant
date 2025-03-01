@@ -4,23 +4,23 @@ import { generateId } from '@/utils/generateId'
 import LanguageBar from '@/components/LanguageBar'
 import LoadingAnimation from '@/components/LoadingAnimation'
 import LoginButton from '@/components/LoginButton'
+import Sidebar from '@/components/Sidebar'
 import SimulatedStreaming from '@/components/SimulatedStreaming'
 import sentMsgImage from '@/public/icons/arrow-up-solid.svg'
 import attachmentIcon from '@/public/icons/attach-icon-white.png'
 import deepseekLogo from '@/public/icons/shark_without_bg.webp'
-import { add_new_message, addMessage, copyMessage, sendMessage, set_title, setHoveredMessage, setIsEditing, setLanguage, setPrompt, toggleScrollUp } from '@/redux/slices/chat.slice'
+import { add_new_message, addMessage, copyMessage, sendMessage, set_title, setHoveredMessage, setIsEditing, setLanguage, setPrompt, toggleScrollUp, toggleSidebar } from '@/redux/slices/chat.slice'
 import { AppDispatch, RootState } from '@/redux/store'
-import { Check, Copy, PenLine } from 'lucide-react'
+import { Check, Copy, PanelLeftOpen, PenLine } from 'lucide-react'
 import Image from "next/image"
 import { FormEvent, useEffect, useRef } from 'react'
 import Markdown from 'react-markdown'
 import { useDispatch, useSelector } from 'react-redux'
-import Sidebar from '@/components/Sidebar'
 
 
 const Home = () => {
 
-  const { prompt, language,  hoveredMessage, isEditing, copied, loading, serverMessage, scrollup, currentChat, userId } = useSelector((state: RootState) => state.chat)
+  const { prompt, language, hoveredMessage, isEditing, copied, loading, serverMessage, scrollup, currentChat, userId, isSidebarOpen } = useSelector((state: RootState) => state.chat)
 
   const dispatch = useDispatch<AppDispatch>()
 
@@ -88,8 +88,8 @@ const Home = () => {
     dispatch(toggleScrollUp())
     dispatch(addMessage(userMessage))
 
-    if ((!currentChat?.messages || currentChat.messages?.length == 0) && currentChat?._id){
-        dispatch(set_title({chatId:currentChat._id.toString(),text:prompt}))
+    if ((!currentChat?.messages || currentChat.messages?.length == 0) && currentChat?._id) {
+      dispatch(set_title({ chatId: currentChat._id.toString(), text: prompt }))
     }
 
     const user_new_msg = {
@@ -106,10 +106,10 @@ const Home = () => {
       }
 
       await dispatch(sendMessage(promptData))
-      if(userId){
+      if (userId) {
         await dispatch(add_new_message(user_new_msg))
       }
-      
+
 
     } catch (error) {
       console.log("Error in generating Response", (error as Error).message)
@@ -118,15 +118,18 @@ const Home = () => {
   return (
     <div className='flex  w-screen h-screen overflow-hidden'>
 
-      <div className="sidebar h-full   z-50 bg-white">
-          <Sidebar/>
+      {isSidebarOpen && <div onClick={() => dispatch(toggleSidebar())} className='absolute inset-0 bg-black/50 z-40 md:hidden'></div>}
+
+      <div className="sidebar h-full absolute md:relative  z-50 bg-white">
+        <Sidebar />
       </div>
 
-      <div className={`h-full relative right-side w-full flex flex-col  items-center justify-center bg-primary `}>
+      <div className={`h-full relative right-side w-full flex flex-col  items-center justify-end md:justify-center bg-primary `}>
 
 
-        <div className="header w-full flex items-center justify-between  absolute top-0  min-h-[8vh] z-50 bg-primary px-6">
+        <div className="header w-full flex items-center justify-between  absolute top-0  min-h-[8vh] z-30 bg-primary px-6">
 
+          <PanelLeftOpen onClick={() => dispatch(toggleSidebar())} className='md:hidden' size={28} />
           <LanguageBar />
 
 
@@ -137,28 +140,28 @@ const Home = () => {
               name="title"
               value={currentChat?.title}
               id="title"
-              className="chat-title-input outline-none w-1/4 h-8 rounded-3xl  text-lg text-lesswhite bg-transparent hover:border hover:border-white text-center"
+              className="chat-title-input outline-none w-1/4 h-8 rounded-3xl  text-lg text-lesswhite bg-transparent hover:border hidden md:block hover:border-white text-center"
             />
           }
           <LoginButton />
         </div>
-    
+
         <div ref={chatRef} className={`w-full ${(currentChat?.messages && currentChat?.messages?.length > 0) ? 'h-full' : ""} overflow-y-scroll scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-400 overflow-x-hidden flex justify-center mt-[8vh]`}>
-    
+
           {(!currentChat?.messages || currentChat?.messages?.length === 0) ? "" :
-            <div className='w-7/12  h-fit  pb-[15rem]'>
-             
+            <div className='w-11/12 md:w-7/12  h-fit  pb-[15rem]'>
+
               {currentChat?.messages?.map((msg) =>
-                 
+
                 <div key={msg?._id} className='w-full'>
                   {msg?.sender === 'user' ?
-                     
+
                     <div
                       className='w-full flex justify-end mr-5 '
                       onMouseEnter={() => dispatch(setHoveredMessage(msg?._id))}
                       onMouseLeave={() => dispatch(setHoveredMessage(null))}
                     >
-                     
+
                       {isEditing?.id === msg?._id ?
                         <div className='w-[90%] my-2'>
                           <div className="message-box bg-[#4f4f4f] w-full h-fit  rounded-3xl py-4 px-4">
@@ -202,7 +205,7 @@ const Home = () => {
                           </div>
                         </div>
 
-                        : <div className="py-3 px-4 my-2 h-fit max-w-[90%]  w-fit rounded-3xl bg-chat relative">
+                        : <div className="py-2 md:py-3 px-4 my-[6px] md:my-2 h-fit max-w-[90%]  w-fit rounded-3xl bg-chat relative">
                           {msg?.text}
                           {
                             hoveredMessage === msg?._id ?
@@ -243,9 +246,9 @@ const Home = () => {
                     </div>
 
                     : <div className='w-full flex justify-start'>
-                      <div className="py-4  my-2 h-fit max-w-full  w-fit rounded-3xl bg-transparent ">
+                      <div className="py-4  my-[6px] md:my-2 h-fit max-w-full  w-fit rounded-3xl bg-transparent ">
 
-                        <div className='flex item-center justify-start my-2 relative'>
+                        <div className='flex item-center justify-start my-[6px] md:my-2 relative'>
                           <div className='w-8 h-8  border  rounded-full   flex justify-center items-center absolute top-0 left-0'>
 
                             <Image src={deepseekLogo} height={28} alt='logo' className=' fit-cover w-full h-full  ' />
@@ -287,9 +290,9 @@ const Home = () => {
         </div>
 
 
-        <div className='w-full flex justify-center sticky bottom-0 z-40  bg-primary mr-[6px]'>
-          <div className='w-7/12 '>
-            <form onSubmit={handleSubmit} className="message-box bg-chat  w-full h-fit rounded-3xl py-4 px-4">
+        <div className='w-full flex justify-center sticky bottom-0 z-30  bg-primary mr-[6px]'>
+          <div className='w-full md:w-7/12 '>
+            <form onSubmit={handleSubmit} className="message-box bg-chat  w-full h-fit rounded-tl-3xl rounded-tr-3xl md:rounded-3xl py-4 px-4">
 
               <textarea
                 ref={textareaRef}
@@ -327,7 +330,7 @@ const Home = () => {
               </div>
             </form>
 
-            <div className='w-full z-20  text-center py-2'><p className='text-xs text-[#9d9d9f]'>Ai generated content</p></div>
+            <div className='w-full z-20  text-center py-2 hidden md:block'><p className='text-xs text-[#9d9d9f]'>Ai generated content</p></div>
           </div>
         </div>
       </div>

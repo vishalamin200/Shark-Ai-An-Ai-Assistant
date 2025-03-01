@@ -29,10 +29,10 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const userLanguage = language || "English"; // ✅ Default language
+        const userLanguage = language || "English"; 
 
         // ✅ Properly adding instructions inside prompt
-        const customPrompt = `Respond to the following prompt strictly in ${userLanguage}  
+        const customPrompt = `the prompt is in the ${userLanguage} language, and Respond to the following prompt strictly in ${userLanguage} language only.
         Prompt: ${prompt}`;
 
 
