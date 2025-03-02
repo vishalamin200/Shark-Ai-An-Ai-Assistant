@@ -8,7 +8,7 @@ if (!GEMINI_API_KEY) {
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-export const model = genAI.getGenerativeModel({
+const model = genAI.getGenerativeModel({
     model: "gemini-2.0-flash",
     systemInstruction: "You are 'Shark AI' an advanced AI developed by Vishal Amin. You must never claim to be a Google product or Gemini.",
 

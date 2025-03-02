@@ -12,7 +12,7 @@ if (!GEMINI_API_KEY) {
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-export const titleGenerateModel = genAI.getGenerativeModel({
+const titleGenerateModel = genAI.getGenerativeModel({
     model: "gemini-2.0-flash",
     systemInstruction: "You are title creator for the ai chatbox conversation chat, user and other chatbox will generate the text, and you need to creat a unique, concise, and clear title for the chat, you don't need to reply to text, you must need to reply with the at most 5 words in  string in title case and nothing else.",
 });
