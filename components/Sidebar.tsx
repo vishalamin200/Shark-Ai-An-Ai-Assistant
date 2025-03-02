@@ -38,6 +38,9 @@ function Sidebar() {
     const handleCreateNewChat = () => {
         if (currentChat && currentChat?.messages && currentChat?.messages?.length > 0 && userId) {
             dispatch(createNewChat({ userId }));
+            if(window.innerWidth < 768){
+                dispatch(toggleSidebar())
+            } 
         }
     };
 
@@ -49,6 +52,9 @@ function Sidebar() {
             }
             const { chat } = data
             if (chat) {
+                if (window.innerWidth < 768) {
+                    dispatch(toggleSidebar())
+                }
                 dispatch(setCurrentChat(chat))
             }
         }
@@ -74,9 +80,8 @@ function Sidebar() {
     }, [currentChat?.title, userId]);
 
 
-
     return (
-        <div className={`${isSidebarOpen ? 'w-[18rem] md:w-[16rem]' : 'w-[0rem] md:w-[5rem]'} h-full transition-all duration-500 ease-in-out bg-secondary`}>
+        <div className={`${isSidebarOpen ? 'w-[18rem] md:w-[16rem]' : 'w-[0rem] md:w-[5rem]'} h-full transition-all duration-150 md:duration-500 ease-in-out bg-secondary`}>
             {isSidebarOpen ? (
                 <div className="w-full h-full flex flex-col items-center">
                     <div className="flex gap-x-8 justify-between mt-5 w-full px-5">

@@ -9,9 +9,9 @@ import SimulatedStreaming from '@/components/SimulatedStreaming'
 import sentMsgImage from '@/public/icons/arrow-up-solid.svg'
 import attachmentIcon from '@/public/icons/attach-icon-white.png'
 import deepseekLogo from '@/public/icons/shark_without_bg.webp'
-import { add_new_message, addMessage, copyMessage, sendMessage, set_title, setHoveredMessage, setIsEditing, setLanguage, setPrompt, toggleScrollUp, toggleSidebar } from '@/redux/slices/chat.slice'
+import { add_new_message, addMessage, copyMessage, createNewChat, sendMessage, set_title, setHoveredMessage, setIsEditing, setLanguage, setPrompt, toggleScrollUp, toggleSidebar } from '@/redux/slices/chat.slice'
 import { AppDispatch, RootState } from '@/redux/store'
-import { Check, Copy, PanelLeftOpen, PenLine } from 'lucide-react'
+import { Check, Copy, PanelLeftOpen, PenLine, SquarePen } from 'lucide-react'
 import Image from "next/image"
 import { FormEvent, useEffect, useRef } from 'react'
 import Markdown from 'react-markdown'
@@ -41,6 +41,8 @@ const Home = () => {
       }
     }
   }
+
+
   useEffect(() => {
     const textarea = textareaRef.current
 
@@ -71,7 +73,15 @@ const Home = () => {
       return
     }
   }, [scrollup])
-  { console.log("userId =", userId) }
+
+  const handleCreateNewChat = () => {
+    if (currentChat && currentChat?.messages && currentChat?.messages?.length > 0 && userId) {
+      dispatch(createNewChat({ userId }));
+      if (window.innerWidth < 768) {
+        dispatch(toggleSidebar())
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -127,10 +137,12 @@ const Home = () => {
       <div className={`h-full relative right-side w-full flex flex-col  items-center justify-end md:justify-center bg-primary `}>
 
 
-        <div className="header w-full flex items-center justify-between  absolute top-0  min-h-[8vh] z-30 bg-primary px-6">
+        <div className="header w-full flex items-center justify-between  absolute top-0  min-h-[8vh] z-30 bg-primary px-6 ">
 
-          <PanelLeftOpen onClick={() => dispatch(toggleSidebar())} className='md:hidden' size={28} />
-          <LanguageBar />
+          <div className='flex items-center gap-x-6'>
+            <PanelLeftOpen onClick={() => dispatch(toggleSidebar())} className='md:hidden' size={28} />
+            <LanguageBar />
+          </div>
 
 
           {(currentChat?.messages && currentChat?.messages?.length > 0) &&
@@ -140,10 +152,16 @@ const Home = () => {
               name="title"
               value={currentChat?.title}
               id="title"
-              className="chat-title-input outline-none w-1/4 h-8 rounded-3xl  text-lg text-lesswhite bg-transparent hover:border hidden md:block hover:border-white text-center"
+              className="chat-title-input outline-none w-1/4 h-8 rounded-3xl  text-lg text-lesswhite bg-transparent hover:border hidden md:block hover:border-white text-center "
             />
           }
-          <LoginButton />
+
+          <div  className='flex items-center gap-x-8'>
+            <SquarePen onClick={handleCreateNewChat} size={28} className='md:hidden' />
+            <LoginButton />
+          </div>
+
+
         </div>
 
         <div ref={chatRef} className={`w-full ${(currentChat?.messages && currentChat?.messages?.length > 0) ? 'h-full' : ""} overflow-y-scroll scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-400 overflow-x-hidden flex justify-center mt-[8vh]`}>

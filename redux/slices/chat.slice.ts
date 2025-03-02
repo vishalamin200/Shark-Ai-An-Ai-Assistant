@@ -9,6 +9,7 @@ interface Message {
     sender: string
 }
 
+const getInitialSidebarState = () => (typeof window !== "undefined" ? window.innerWidth >= 768 : false);
 
 export interface currentChatProps{
     _id?:string,
@@ -74,7 +75,7 @@ const initialState: initialStateProps = {
     hoveredSidebarChat: null,
 
     options:false,
-    isSidebarOpen:true,
+    isSidebarOpen: getInitialSidebarState(),
 }
 
 export const copyMessage = createAsyncThunk("chat/copyMessage/", async ({ id, text }: { id: string, text: string }) => {

@@ -1,8 +1,11 @@
 'use client'
 
-import Lottie, { LottieRefCurrentProps } from 'lottie-react';
+import dynamic from 'next/dynamic';
+import  { LottieRefCurrentProps } from 'lottie-react';
 import React, { useEffect, useRef } from 'react'
 import chatLoadingAnimation from '@/public/animations/chat-loading-animation.json'
+
+const Lottie = dynamic(()=>import('lottie-react'),{ssr:false})
 
 function ChatLoader() {
     const lottieRef = useRef<LottieRefCurrentProps | null>(null)
