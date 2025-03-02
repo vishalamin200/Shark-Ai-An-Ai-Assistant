@@ -12,7 +12,7 @@ import ChatLoader from './ChatLoader';
 
 const fetchChats = async ({ pageParam = 1, userId, limit }: { pageParam: number, userId: string, limit: number }) => {
 
-    const response = await fetch(`http://localhost:3000/api/chat?userId=${userId}&page=${pageParam}&limit=${limit}`);
+    const response = await fetch(`${process.env.NEXT_PUBLIC_CLIENT_URI}/api/chat?userId=${userId}&page=${pageParam}&limit=${limit}`);
 
     if (response.ok) {
         const data = await response.json();
@@ -24,7 +24,7 @@ const fetchChats = async ({ pageParam = 1, userId, limit }: { pageParam: number,
 };
 
 const fetchChat = async (chatId: string) => {
-    const response = await fetch(`http://localhost:3000/api/chat/fetch_chat?chatId=${chatId}`)
+    const response = await fetch(`${process.env.NEXT_PUBLIC_CLIENT_URI}/api/chat/fetch_chat?chatId=${chatId}`)
     const data = await response.json()
     return data
 }
