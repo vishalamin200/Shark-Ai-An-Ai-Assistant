@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
             {
                 success: false,
                 message: "Error in generating content",
-                error: error.message,
+                error: (error as Error).message,
             },
             { status: 500 }
         );
